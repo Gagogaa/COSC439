@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 
-chatfile = "gm_chat.txt"
+chatfile = "gmann1_chat.txt"
 
 
 # For the server this should always be localhost
