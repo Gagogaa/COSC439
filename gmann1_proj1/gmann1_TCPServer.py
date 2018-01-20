@@ -1,54 +1,60 @@
+"""
+Gregory Mann
+COSC439 Computer Networking
+The server component for the first project
+"""
+
 import socket
 import sys
 import os
 from datetime import datetime
 
 
-chatfile = "gmann1_chat.txt"
+CHATFILE = "gmann1_chat.txt"
 
 
-# Parses the command line arguments for the
-# corresponding option or return the empty string
 def arg_parse(option):
+    """Parses the command line arguments for the
+    corresponding option or return the empty string"""
     for i in range(len(sys.argv)):
         if sys.argv[i] == option:
             return sys.argv[i + 1]
     return ""
 
 
-# For the server this should always be localhost
 def get_host():
+    """For the server this should always be localhost"""
     return "localhost"
 
 
-# Return the server port from the command line args or the default port
 def get_port():
+    """Return the server port from the command line args or the default port"""
     result = arg_parse("-p")
     return 56550 if result == "" else int(result)
 
 
-# Turn a timedelta object into a string
-def timedelta_to_str(t):
-    hours = int(t.seconds / 3600)
-    minutes = int((t.seconds / 60) - (hours * 60))
-    seconds = int(t.seconds - (minutes * 60))
-    milliseconds = int(t.microseconds / 1000)
+def timedelta_to_str(time):
+    """Turn a timedelta object into a string"""
+    hours = int(time.seconds / 3600)
+    minutes = int((time.seconds / 60) - (hours * 60))
+    seconds = int(time.seconds - (minutes * 60))
+    milliseconds = int(time.microseconds / 1000)
 
     return str(hours)+"::"+str(minutes)+"::"+str(seconds)+"::"+str(milliseconds)
 
 
-# Entry point for the program
 def main():
+    """Entry point for the program"""
     host = get_host()
     port = get_port()
 
     # Create an internet TCP socket
     # SOCK_STREAM is TCP. SOCK_DGRAM is UDP
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # Bind to the socket
-    s.bind((host, port))
+    soc.bind((host, port))
     # Listen for only 1 connection (Don't buffer other connections)
-    s.listen(1)
+    soc.listen(1)
 
     # Wrap in a try..except to handle C-c keyboard Interrupts
     # So I can shutdown the server and free the socket
@@ -57,24 +63,25 @@ def main():
         while True:
             # Accept is blocking so the server will wait for a
             # connection before continuing
-            client, address = s.accept()
+            client, address = soc.accept()
             run(client, address)
     except KeyboardInterrupt:
         print("\nServer shutting down.")
     except:
         print("\nUnknown Server Error")
     finally:
-        s.close()
+        soc.close()
 
 
 def run(client, address):
+    """Code to run when a client connects"""
     print("User Connected ", address)
     # Start the connection time from right now
     start_time = datetime.now()
     # The first message from the client is the username
     username = client.recv(1024).decode()
     # Open the chat file for writing
-    fout = open(chatfile, "w")
+    fout = open(CHATFILE, "w")
 
     while True:
         # Get data from the user 1024 bytes at a time
@@ -93,12 +100,12 @@ def run(client, address):
     fout.close()
 
     # Open the chat file for reading
-    fin = open(chatfile, "r")
+    fin = open(CHATFILE, "r")
     # Read in the entire file
     messages = fin.read()
     fin.close()
     # Remove the chat file
-    os.remove(chatfile)
+    os.remove(CHATFILE)
     # Send the Client all the messages
     client.send(messages.encode())
     connection_time = datetime.now() - start_time
