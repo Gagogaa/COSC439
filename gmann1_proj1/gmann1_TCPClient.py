@@ -2,31 +2,31 @@ import socket
 import sys
 
 
-# Get the host name from the command line or reutrn the default value
-def get_host():
+# Parses the command line arguments for the
+# corresponding option or returns the empty string
+def arg_parse(option):
     for i in range(len(sys.argv)):
-        if sys.argv[i] == "-h":
+        if sys.argv[i] == option:
             return sys.argv[i + 1]
-
-    return "localhost"
-
-
-# Get the port number from the command line or reutrn the default value
-def get_port():
-    for i in range(len(sys.argv)):
-        if sys.argv[i] == "-p":
-            return int(sys.argv[i + 1])
-
-    return 56550
-
-
-# Get the username from the command line or reutrn the default value
-def get_username():
-    for i in range(len(sys.argv)):
-        if sys.argv[i] == "-u":
-            return sys.argv[i + 1]
-
     return ""
+
+
+# Get the host name from the command line or return the default value
+def get_host():
+    result = arg_parse("-h")
+    return "localhost" if result == "" else result
+
+
+# Get the port number from the command line or return the default value
+def get_port():
+    result = arg_parse("-p")
+    return 56550 if result == "" else int(result)
+
+
+# Get the username from the command line or return the default value
+def get_username():
+    # The default value should be the empty string
+    return arg_parse("-u")
 
 
 # Entry point for the program
