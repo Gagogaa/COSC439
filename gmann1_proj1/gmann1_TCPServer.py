@@ -86,7 +86,7 @@ def run(client, address):
     # Close the chat file
     fout.close()
 
-    # Open teh chat file for reading
+    # Open the chat file for reading
     fin = open(chatfile, "r")
     # Read in the entire file
     messages = fin.read()
