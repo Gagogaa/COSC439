@@ -7,6 +7,15 @@ from datetime import datetime
 chatfile = "gmann1_chat.txt"
 
 
+# Parses the command line arguments for the
+# corresponding option or return the empty string
+def arg_parse(option):
+    for i in range(len(sys.argv)):
+        if sys.argv[i] == option:
+            return sys.argv[i + 1]
+    return ""
+
+
 # For the server this should always be localhost
 def get_host():
     return "localhost"
@@ -14,11 +23,8 @@ def get_host():
 
 # Return the server port from the command line args or the default port
 def get_port():
-    for i in range(len(sys.argv)):
-        if sys.argv[i] == "-p":
-            return int(sys.argv[i + 1])
-
-    return 56550
+    result = arg_parse("-p")
+    return 56550 if result == "" else int(result)
 
 
 # Turn a timedelta object into a string
@@ -41,7 +47,7 @@ def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # Bind to the socket
     s.bind((host, port))
-    # Listen for only 1 connection (Dont buffer other connections)
+    # Listen for only 1 connection (Don't buffer other connections)
     s.listen(1)
 
     # Wrap in a try..except to handle C-c keyboard Interrupts
