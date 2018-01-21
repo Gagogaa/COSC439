@@ -1,6 +1,6 @@
 """
 Gregory Mann
-COSC439 Computer Networking
+COSC 439 Computer Networking
 The server component for the first project
 """
 
