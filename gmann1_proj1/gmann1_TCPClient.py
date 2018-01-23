@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Gregory Mann
 COSC439 Computer Networking
@@ -8,7 +9,7 @@ import socket
 import sys
 
 
-def arg_parse(option):
+def parse_args(option):
     """Parses the command line arguments for the
     corresponding option or returns the empty string"""
     for i in range(len(sys.argv)):
@@ -19,20 +20,20 @@ def arg_parse(option):
 
 def get_host():
     """Get the host name from the command line or return the default value"""
-    result = arg_parse("-h")
+    result = parse_args("-h")
     return "localhost" if result == "" else result
 
 
 def get_port():
     """Get the port number from the command line or return the default value"""
-    result = arg_parse("-p")
+    result = parse_args("-p")
     return 56550 if result == "" else int(result)
 
 
 def get_username():
     """Get the username from the command line or return the default value"""
     # The default value should be the empty string
-    return arg_parse("-u")
+    return parse_args("-u")
 
 
 def main():

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Gregory Mann
 COSC439 Computer Networking
@@ -13,7 +14,7 @@ from datetime import datetime
 CHATFILE = "gmann1_chat.txt"
 
 
-def arg_parse(option):
+def parse_args(option):
     """Parses the command line arguments for the
     corresponding option or return the empty string"""
     for i in range(len(sys.argv)):
@@ -29,7 +30,7 @@ def get_host():
 
 def get_port():
     """Return the server port from the command line args or the default port"""
-    result = arg_parse("-p")
+    result = parse_args("-p")
     return 56550 if result == "" else int(result)
 
 
@@ -40,7 +41,7 @@ def timedelta_to_str(time):
     seconds = int(time.seconds - (minutes * 60))
     milliseconds = int(time.microseconds / 1000)
 
-    return str(hours)+"::"+str(minutes)+"::"+str(seconds)+"::"+str(milliseconds)
+    return str(hours) + "::" + str(minutes) + "::" + str(seconds) + "::" + str(milliseconds)
 
 
 def main():
