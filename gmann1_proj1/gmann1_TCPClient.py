@@ -9,6 +9,9 @@ import socket
 import sys
 
 
+DEFAULT_PORT = 56550
+
+
 def parse_args(option):
     """Parses the command line arguments for the
     corresponding option or returns the empty string"""
@@ -27,7 +30,7 @@ def get_host():
 def get_port():
     """Get the port number from the command line or return the default value"""
     result = parse_args("-p")
-    return 56550 if result == "" else int(result)
+    return DEFAULT_PORT if result == "" else int(result)
 
 
 def get_username():

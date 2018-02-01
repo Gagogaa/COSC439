@@ -12,6 +12,7 @@ from datetime import datetime
 
 
 CHATFILE = "gmann1_chat.txt"
+DEFAULT_PORT = 56550
 
 
 def parse_args(option):
@@ -31,7 +32,7 @@ def get_host():
 def get_port():
     """Return the server port from the command line args or the default port"""
     result = parse_args("-p")
-    return 56550 if result == "" else int(result)
+    return DEFAULT_PORT if result == "" else int(result)
 
 
 def timedelta_to_str(time):
