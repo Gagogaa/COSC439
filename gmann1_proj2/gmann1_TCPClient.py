@@ -38,7 +38,13 @@ def get_port():
 def get_username():
     """Get the username from the command line or return the default value"""
     # The default value should be the empty string
-    return parse_args("-u")
+    user_name = parse_args("-u")
+
+    # Prompt the user for a username until the user enters one
+    while user_name == "":
+        user_name = input("Please enter a username: ")
+
+    return user_name
 
 
 def main():
@@ -52,7 +58,7 @@ def main():
 def display_thread(soc):
     """Print messages that the application gets from the server"""
     while True:
-        print(soc.recv(4096).decode())
+        print(soc.recv(1024).decode(), end='')
 
 
 def run(address, username):
@@ -63,15 +69,11 @@ def run(address, username):
     # Connect to a server socket
     soc.connect(address)
 
-    # Prompt the user for a username until the user enters one
-    while username == "":
-        username = input("Please enter a username: ")
-
     # Send the username
     soc.send(username.encode())
 
     # Start a thread that handles printing messages from the server
-    display = _thread.start_new_thread(display_thread, (soc,))
+    _thread.start_new_thread(display_thread, (soc,))
 
     print("Enter messages:")
 
@@ -87,9 +89,12 @@ def run(address, username):
             if message == "DONE":
                 break
     except KeyboardInterrupt:
-        pass
-    finally:
+        # Send DONE if the user enters C-c
         soc.send("DONE".encode())
+    finally:
+        # Print out the connection time from the server
+        print(soc.recv(1024).decode())
+        # Exit the program
         exit()
 
 

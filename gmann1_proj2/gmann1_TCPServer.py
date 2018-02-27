@@ -3,13 +3,7 @@
 Gregory Mann
 COSC439 Computer Networking
 The server component for the second project
-
-NOTE: Python code will only execute on 1 cpu core
-even when using threads due to the global interpreter lock (GIL)
 """
-
-
-# TODO: Put the connection time back in :(
 
 
 import socket
@@ -17,12 +11,13 @@ import sys
 import os
 import _thread
 import threading
+from datetime import datetime
 
 
 CHATFILE = "gmann1_chat.txt"
 DEFAULT_PORT = 56550
 CONNECTED_USERS = 0
-THREADS = {}
+CLIENTS = {}
 LOCK = threading.Lock()
 
 
@@ -33,6 +28,16 @@ def parse_args(option):
         if sys.argv[i] == option:
             return sys.argv[i + 1]
     return ""
+
+
+def timedelta_to_str(time):
+    """Turn a timedelta object into a string"""
+    hours = int(time.seconds / 3600)
+    minutes = int((time.seconds / 60) - (hours * 60))
+    seconds = int(time.seconds - (minutes * 60))
+    milliseconds = int(time.microseconds / 1000)
+
+    return str(hours) + "::" + str(minutes) + "::" + str(seconds) + "::" + str(milliseconds)
 
 
 def get_host():
@@ -46,118 +51,115 @@ def get_port():
     return DEFAULT_PORT if result == "" else int(result)
 
 
-class Client(threading.Thread):
-    """Threading object used as a template for each of the clients"""
-    user_name = ""
-    client = None
-    address = None
+def write_to_chat_file(message):
+    """Write out the message to the chat file"""
+    global CHATFILE
+    global LOCK
+
+    # Acquire a lock on this section of code
+    LOCK.acquire()
+    # Open the file for appending
+    fout = open(CHATFILE, "a")
+    # Append the message to the chat file
+    fout.write(message)
+    fout.flush()
+    fout.close()
+    # Release the lock
+    LOCK.release()
 
 
-    def __init__(self, c, a):
-        """__init__ is pythons version of a constructor"""
-        global CONNECTED_USERS
+def broadcast(message, sender):
+    """Broadcast the message to all the other connected users and write
+    the message to the chat file"""
+    global CLIENTS
+    message = message + "\n"
 
-        # Call the super class constructor
-        threading.Thread.__init__(self)
+    # Print the message out on the server screen
+    print(message, end='')
 
-        # If this is the first user then create the chat file
-        if CONNECTED_USERS == 0:
-            open(CHATFILE, "w").close()
+    # Write out the message to the chat file
+    write_to_chat_file(message)
 
-        CONNECTED_USERS += 1
-        self.client = c
-        self.address = a
-
-
-    def write_to_chat_file(self, message):
-        """Write out the message to the chat file"""
-        global CHATFILE
-        global LOCK
-
-        # Acquire a lock on this section of code
-        LOCK.acquire()
-        # Open the file for appending
-        fout = open(CHATFILE, "a")
-        # Append the message to the chat file
-        fout.write(message + "\n")
-        fout.flush()
-        fout.close()
-        # Release the lock
-        LOCK.release()
+    # Send the message to all the *OTHER* clients
+    for client in CLIENTS.values():
+        if sender != client:
+            client.send(message.encode())
 
 
-    def read_chat_file(self):
-        """Read all of the previous chat messages from the file"""
-        global CHATFILE
-        # Open the file for reading
-        fin = open(CHATFILE, "r")
-        # Read in the entire file
-        messages = fin.read()
-        fin.close()
-        return messages
+def send_chatfile_messages(client):
+    """Sends clients the messages from the charfile line by line"""
+    global CHATFILE
+    # Open the file for reading
+    fin = open(CHATFILE, "r")
+
+    # For every line in the file send it to the client
+    s = fin.readline()
+
+    # The empty string signifies the end of the file
+    while s != "":
+        client.send(s.encode())
+        s = fin.readline()
+
+    # Close the file
+    fin.close()
 
 
-    def broadcast(self, message):
-        """Broadcast the message to all the other connected users and write
-        the message to the chat file"""
-        # Prepend the user name to the message
-        message = self.user_name + ": " + message
+def run(client):
+    """Code to run when a client connects"""
+    global CLIENTS
+    global CONNECTED_USERS
+    global CHATFILE
 
-        # Print the message out on the server screen
-        print(message)
+    # Start the connection time from right now
+    start_time = datetime.now()
 
-        # Write out the message to the chat file
-        self.write_to_chat_file(message)
+    # If this is the first user then create the chat file
+    if CONNECTED_USERS == 0:
+        # Open the file than immediately close it
+        open(CHATFILE, "w").close()
 
-        # Send the message to all the *OTHER* clients
-        for name, value in THREADS.items():
-            if self != value:
-                value.client.send(message.encode())
+    CONNECTED_USERS += 1
 
+    # The first message from the client is the username
+    user_name = client.recv(1024).decode()
 
-    def run(self):
-        """Code to run when a client connects"""
-        global THREADS
-        global CONNECTED_USERS
-        global CHATFILE
+    # Add "self" to the Threads dictionary
+    CLIENTS[user_name] = client
 
-        # The first message from the client is the username
-        self.user_name = self.client.recv(1024).decode()
+    # Send the chat file to the connected client
+    send_chatfile_messages(client)
 
-        # Add self to the Threads dictionary
-        THREADS[self.user_name] = self
+    # Show an entrance message
+    broadcast(user_name + ": has connected!", client)
 
-        # Send the chat file to the connected client
-        self.client.send(self.read_chat_file().encode())
+    while True:
+        # Get data from the user 1024 bytes at a time
+        data = client.recv(1024).decode()
+        # DONE is the terminal string so end the connection
+        if data == "DONE":
+            break
 
-        # Show an entrance message
-        self.broadcast("has connected!")
+        # Send the data to all the other clients
+        broadcast(user_name + ": " + data, client)
 
-        while True:
-            # Get data from the user 1024 bytes at a time
-            data = self.client.recv(1024).decode()
-            # DONE is the terminal string so end the connection
-            if data == "DONE":
-                break
+    # Send the connection time to the user
+    connection_time = datetime.now() - start_time
+    client.send(timedelta_to_str(connection_time).encode())
 
-            # Send the data to all the other clients
-            self.broadcast(data)
+    # Close down the connection
+    client.close()
+    broadcast(user_name + ": has disconnected.", client)
 
-        # Close down the connection and end the thread
-        self.client.close()
-        self.broadcast("has disconnected.")
+    CONNECTED_USERS -= 1
 
-        CONNECTED_USERS -= 1
+    # Delete the chat file if no more users are connected
+    if CONNECTED_USERS == 0:
+        os.remove(CHATFILE)
 
-        # Delet the chat file if no more users are connected
-        if CONNECTED_USERS == 0:
-            os.remove(CHATFILE)
-
-        # Delete the thread from the list
-        del THREADS[self.user_name]
+    # Delete the thread from the client list
+    del CLIENTS[user_name]
 
 
-# Keep the number of connections... delete the file when the number of connections is zero
 def main():
     """Entry point for the program"""
     host = get_host()
@@ -168,8 +170,8 @@ def main():
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # Bind to the socket
     soc.bind((host, port))
-    # Listen for only 1 connection (Don't buffer other connections)
-    soc.listen(1)
+    # Listen for up to 10 connections
+    soc.listen(10)
 
     # Wrap in a try..except to handle C-c keyboard Interrupts
     # So I can shutdown the server and free the socket
@@ -178,15 +180,18 @@ def main():
         while True:
             # Accept is blocking so the server will wait for a
             # connection before continuing
-            client, address = soc.accept()
+            client, _ = soc.accept()
             # Create and start the new client thread
-            Client(client, address).start()
+            _thread.start_new_thread(run, (client,))
+
     except KeyboardInterrupt:
         print("\nServer shutting down.")
     except:
         print("\nUnknown Server Error")
     finally:
+        # Close the server socket
         soc.close()
+        # Exit the program
         exit()
 
 
