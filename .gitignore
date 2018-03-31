@@ -2,3 +2,7 @@
 .vscode/.ropeproject/objectdb
 .vscode/settings.json
 .vscode/.ropeproject/config.py
+
+gmann1_proj4/\.vscode/tasks\.json
+
+gmann1_proj4/target/debug/
