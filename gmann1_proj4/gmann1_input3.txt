@@ -1,0 +1,6 @@
+Zuckuss     Mace_Windu      7
+Zuckuss     Han_Solo        3
+Zuckuss     Luke_Skywalker  1
+Mace_Windu  Han_Solo        2
+Han_Solo    Korr_Sella      5
+Korr_Sella  Luke_Skywalker  8
